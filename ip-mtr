@@ -1,0 +1,66 @@
+# Wrote shitily by Sean McCullom on 9/5/2016 10:03AM 
+#
+#This script saves the results of MTR and curl ipinfo to the specified address and prints to screen
+#
+#If then statements 
+#Check if file already exsists 
+if [ -f MTR_$1.txt ] ;
+then
+echo
+echo "$(tput setaf 1)ERROR: $(tput setaf 2)The file "MTR_$1" already exsists."
+tput setaf 2; echo Please delete this file or specify another name.
+exit
+fi
+#Check input for Company name 
+if [[ "$1" == "" ]] ;
+then
+echo
+echo "$(tput setaf 1)ERROR: $(tput setaf 2)No Company name specified" 
+tput setaf 2; echo Example entry: PanterraNetworks 208.77.4.85
+exit
+fi
+#Check IPaddress input for null
+if [[ "$2" == "" ]] ;
+then
+echo
+echo "$(tput setaf 1)ERROR: $(tput setaf 2)No IP Address specified"
+tput setaf 2; echo  Example entry: PanterraNetworks 208.77.4.85
+exit
+fi
+#Check input $2 for IP Address
+if ! [[ "$2" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] ;
+then 
+echo "$(tput setaf 1)ERROR: $(tput setaf 2)Invalid input / IP Address inputted incorrectly"
+tput setaf 2; echo  Example entry: PanterraNetworks 208.77.4.85
+fi
+#Inform user about MTR cycle option
+if [[ "$3" == "" ]] ;
+then 
+echo ""
+echo -en "Command can be run with a specified MTR cyle amount (each cycle is one second) \r"
+echo ""
+echo -en "$(tput setaf 1)Example: $(tput setaf 2) PanterraNetworks 208.77.4.85 $(tput setaf 1)300 $(tput setaf 2)<---Specify there \r"
+echo ""
+fi
+#Make Shit prettier / Add text to file 
+echo "IP info curled from ipinfo.io:" >>MTR_$1.txt
+#Curl ip info specified, remove extra chacters, & number each line 
+curl --silent ipinfo.io/$2 | tr -d '{}",' | nl -w 3 -s '.|--'>> MTR_$1.txt
+#Makes Shit more prettier
+echo "" >>MTR_$1.txt
+echo "-----------------------------------------------------------------------------">>MTR_$1.txt
+echo "MTR test results:" >>MTR_$1.txt
+echo "" >>MTR_$1.txt
+#Runs MTR and saves to file
+if [[ "$3" == "" ]] ;
+then 
+echo Processing please wait...
+mtr -r $2 >>MTR_$1.txt 
+else 
+#MTR $3 / cycle option and count down
+mtr -r -c $3 $2>>MTR_$1.txt &! for i in $(seq $3 -1 0);do echo -en "Process will complete in approximately $i seconds \r" ; sleep 1; done;echo -e "Process will complete momentarily..." 
+fi
+#waits for back round MTR process
+wait
+#Displays MTR & color output
+cat MTR_$1.txt | GREP_COLOR='1;34' grep --color=always "."
